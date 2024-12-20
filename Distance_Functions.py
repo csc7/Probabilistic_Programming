@@ -9,7 +9,38 @@ import pywt
 from scipy.stats import wasserstein_distance
 from scipy.signal import correlate2d
 from sklearn.metrics.pairwise import cosine_similarity
+import pylops
+from pylops.utils.wavelets import ricker
 
+
+# CONSTANTS
+
+# Grid constants
+nx, nz = 100, 100  # Grid size in nx (n, offset) and z (depth) directions
+x = np.linspace(0, nx-1, nx)
+z = np.linspace(0, -(nx-1), nz)
+x_grid, z_grid = np.meshgrid(x, z)
+
+# Impedance values
+salt_impedance = 1
+rock_impedance = 0
+
+# Wavelet
+nt0 = 51
+dt0 = 0.002
+t0 = np.arange(nt0) * dt0
+ntwav = 101
+wav, twav, wavc = ricker(t0[: ntwav // 2 + 1], 20)
+
+# PyLops dense operator
+PPop_dense = pylops.avo.poststack.PoststackLinearModelling(
+    wav / 2, nt0=nz, spatdims=nx, explicit=True
+)
+# PyLops lop operator
+PPop = pylops.avo.poststack.PoststackLinearModelling(wav / 2, nt0=nz, spatdims=nx)
+
+
+# FUNTIONS
 
 # SSIM Index
 def compute_ssim(simulated_data, observed_data):
