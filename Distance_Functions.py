@@ -1,12 +1,12 @@
 # Functions to compute the distance (similarity) of two seismic sections
 
-
 # External dependencies
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from dtaidistance import dtw
 import pywt
 from scipy.stats import wasserstein_distance
+from scipy.spatial.distance import directed_hausdorff
 from scipy.signal import correlate2d
 from sklearn.metrics.pairwise import cosine_similarity
 import pylops
@@ -100,7 +100,7 @@ def compute_energy_difference(simulated_data, observed_data):
     return np.abs(energy_sim - energy_obs) / energy_obs
 
 
-# Earth Mover's Distance
+# Earth Mover's Distance (Wasserstein distance)
 def compute_emd(simulated_data, observed_data):  
 
     return wasserstein_distance(simulated_data.flatten(), observed_data.flatten())
@@ -202,14 +202,56 @@ def compute_cosine_similarity_seismic(simulated_data, observed_data):
     return cosine_similarity(seismic1_flat, seismic2_flat)[0, 0]
 
 
+# Semblance
+def compute_semblance(observed_data, seismic_section):
+
+    # Initialization
+    window_size = 10
+    semblance = np.zeros((nz, nx*2))
+
+    for i in range (0, nx):
+        semblance[:, 2*i] = observed_data[:, i]
+        semblance[:, 2*i+1] = seismic_section[:, i]
+
+    half_window = window_size // 2
+
+    # Semblance for each trace and time sample
+    for trace_idx in range(0, nx*2):
+        for time_idx in range(0, nz):
+            # Define the bounds of the moving window
+            start_trace = max(0, trace_idx - half_window)
+            end_trace = min(nx*2, trace_idx + half_window + 1)
+            start_time = max(0, time_idx - half_window)
+            end_time = min(nz, time_idx + half_window + 1)
+
+            # Windowed data
+            #window_data = seismic_section[start_trace:end_trace, start_time:end_time]
+            window_data = semblance[:, start_trace:end_trace][start_time:end_time, :]
+            
+            # Semblance
+            num = (np.sum(np.sum(window_data, axis=1)))**2
+            denom = window_data.shape[1]*window_data.shape[0] * np.sum((np.sum(window_data**2, axis=1)))
+            
+            if denom == 0:
+                semblance[time_idx, trace_idx] = 0
+            else:
+                semblance[time_idx, trace_idx] = num / denom
+
+            semblance[time_idx, trace_idx] = num / denom
+
+            semblance_sum = np.sum(np.sum(semblance))
+
+    return semblance, semblance_sum
+
+
 # Combined Semblance
-window_size = 10
 def compute_combined_semblance(observed_data, seismic_section):
 
     # Initialization
+    window_size = 10
     semblance = np.zeros((nz, nx*2))
 
-    # Create the combined sections from the two given
+    # Combined sections from the two given sections
     for i in range (0, nx):
         semblance[:, 2*i] = observed_data[:, i]
         semblance[:, 2*i+1] = seismic_section[:, i]
@@ -244,19 +286,19 @@ def compute_combined_semblance(observed_data, seismic_section):
     return semblance, semblance_sum
 
 
-# Wavelet Distance
-bins=30
-wavelet="db1"
-levels=3
+# Wavelet Distance (with Wassersten distance)
 def compute_wavelet_distance(observed_data, simulated_data):
+
+    # Initialization
+    bins=500
+    wavelet="db1"
+    levels=50
+    total_distance = 0
   
     # Decomposeition of observed and simulated data into wavelet coefficients
     coeffs_f = pywt.wavedec2(observed_data, wavelet=wavelet, level=levels)
     coeffs_g = pywt.wavedec2(simulated_data, wavelet=wavelet, level=levels)
-    
-    # Initialization of total distance
-    total_distance = 0
-    
+
     # Loop through levels and sub-bands
     for level in range(len(coeffs_f)):
 
@@ -298,3 +340,20 @@ def compute_wavelet_distance(observed_data, simulated_data):
                 total_distance += d_sc
     
     return total_distance
+
+
+# Hausdorff Distance
+def compute_hausdorff (observed_data, simulated_data):
+
+    # Convertion of images to coordinate sets
+    observed_coords = np.array(np.nonzero(observed_data)).T  # Transpose to get (row, col) pairs
+    simulated_coords = np.array(np.nonzero(simulated_data)).T  # Transpose to get (row, col) pairs
+
+    # Computation of directed Hausdorff distances
+    forward_distance = directed_hausdorff(observed_coords, simulated_coords)[0]
+    backward_distance = directed_hausdorff(simulated_coords, observed_coords)[0]
+
+    # Hausdorff distance is the maximum of forward and backward distances
+    hausdorff_distance = max(forward_distance, backward_distance)
+
+    return hausdorff_distance
