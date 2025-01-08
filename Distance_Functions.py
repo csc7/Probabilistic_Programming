@@ -141,7 +141,8 @@ def compute_pearson_correlation(simulated_data, observed_data):
         # Pearson correlation coefficient
         correlation[i] = covariance / (std1 * std2)
 
-    return np.exp(-correlation / 2.0)
+    #return np.exp(-correlation / 2.0)
+    return np.sum(correlation)
 
 
 # Element wise multiplication
@@ -346,8 +347,13 @@ def compute_wavelet_distance(observed_data, simulated_data):
 def compute_hausdorff (observed_data, simulated_data):
 
     # Convertion of images to coordinate sets
-    observed_coords = np.array(np.nonzero(observed_data)).T  # Transpose to get (row, col) pairs
-    simulated_coords = np.array(np.nonzero(simulated_data)).T  # Transpose to get (row, col) pairs
+    #observed_coords = np.array(np.nonzero(observed_data)).flatten()
+    #simulated_coords = np.array(np.nonzero(simulated_data)).flatten()
+    observed_coords = np.linspace(0, nx*nz-1, nx*nz)
+    observed_coords = np.vstack((observed_coords, observed_data.flatten()))
+
+    simulated_coords = np.linspace(0, nx*nz-1, nx*nz)
+    simulated_coords = np.vstack((simulated_coords, simulated_data.flatten()))
 
     # Computation of directed Hausdorff distances
     forward_distance = directed_hausdorff(observed_coords, simulated_coords)[0]
