@@ -53,7 +53,7 @@ def compute_ssim(simulated_data, observed_data):
     return ssim_value
 
 
-# MAE
+# Mean Absolute Error
 def compute_mae(simulated_data, observed_data):  
 
     return np.mean(np.abs(simulated_data - observed_data))
