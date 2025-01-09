@@ -35,19 +35,28 @@ def compute_OT(simulated_data, observed_data):
 
 
 def compute_OT_2(simulated_data, observed_data):
+
+    # choose grid to use
+    nugrid,ntgrid=40,512 # This is the discretization of the waveform window used to evaluated the density surface
+    lambdav = 1 #0.03    # This is the distance scale factor used to calculate the density function (eqn. 17 of Sambridge et al. (2
+    trange = [0, nx]
+    grid = (trange[0], trange[1], -1.0, 1.0, nugrid,ntgrid) # specify grid for fingerprint # -0.8, 1.2
+
     fx = np.linspace(0, nx*nz, nx*nz)
     gx = np.linspace(0, nx*nz, nx*nz)
-    f = observed_data.flatten()
-    g = simulated_data.flatten()
+    f = observed_data.T.flatten()
+    g = simulated_data.T.flatten()
 
-    wfobs, wfobs_target = ru.BuildOTobjfromWaveform(fx,f,grid,lambdav=lambdav)
+    wf_f, OT_pdf_f = ru.BuildOTobjfromWaveform(fx,f,grid,lambdav=lambdav)
+    wf_g, OT_pdf_g = ru.BuildOTobjfromWaveform(gx,g,grid,lambdav=lambdav)
 
-    wfs,wfsource = ru.BuildOTobjfromWaveform(gx,g,grid,lambdav=lambdav)
+    #ru.fp.plot_LS(wf_f.dfield,wf_f,None,None,'Fingerprint of observed data','grey','grey',aspect=True) 
+    #ru.fp.plot_LS(wf_g.dfield,wf_g,None,None,'Fingerprint of simulated data','grey','grey',aspect=True) 
 
-    w_1 = ru.CalcWasserWaveform(wfsource,wfobs_target,wfs,distfunc='W1')
-    w_2 = ru.CalcWasserWaveform(wfsource,wfobs_target,wfs,distfunc='W2')
+    w_1 = ru.CalcWasserWaveform(OT_pdf_f, OT_pdf_g, wf_g, distfunc='W1', deriv=False, returnmarg=False)
+    w_2 = ru.CalcWasserWaveform(OT_pdf_f, OT_pdf_g, wf_g, distfunc='W1', deriv=False, returnmarg=False)
 
-    return (w_1 + w_2)
+    return (w_2)
 
 
 def compute_OT_3(simulated_data, observed_data):
