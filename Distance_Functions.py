@@ -5,7 +5,7 @@ import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from dtaidistance import dtw
 import pywt
-from scipy.stats import wasserstein_distance
+from scipy.stats import wasserstein_distance, wasserstein_distance_nd
 from scipy.spatial.distance import directed_hausdorff
 from scipy.signal import correlate2d
 from sklearn.metrics.pairwise import cosine_similarity
@@ -369,7 +369,16 @@ def compute_hausdorff (observed_data, simulated_data):
 def compute_wasserstein_distance(simulated_data, observed_data):
 
     # Wasserstein Distance
-    misfit = wasserstein_distance(simulated_data.flatten(), observed_data.flatten())
+    misfit = wasserstein_distance_nd(simulated_data.flatten(), observed_data.flatten())
+    
+    return misfit
+
+
+# Wasserstein Distance N-D Discrete Distributions
+def compute_wasserstein_distance_nd(simulated_data, observed_data):
+
+    # Wasserstein Distance
+    misfit = wasserstein_distance_nd(simulated_data.flatten(), observed_data.flatten())
     
     return misfit
 
