@@ -378,7 +378,7 @@ def compute_wasserstein_distance(simulated_data, observed_data):
 def compute_least_squares_misfit(simulated_data, observed_data):
 
     # Check for size compatibility
-    if observed.shape != synthetic.shape:
+    if observed_data.shape != simulated_data.shape:
         raise ValueError("Observed and synthetic data must have the same dimensions.")
     
     # Compute the residuals
