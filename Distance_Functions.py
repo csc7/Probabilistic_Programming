@@ -363,3 +363,28 @@ def compute_hausdorff (observed_data, simulated_data):
     hausdorff_distance = max(forward_distance, backward_distance)
 
     return hausdorff_distance
+
+
+# Wasserstein Distance
+def compute_wasserstein_distance(simulated_data, observed_data):
+
+    # Wasserstein Distance
+    misfit = wasserstein_distance(simulated_data.flatten(), observed_data.flatten())
+    
+    return misfit
+
+
+# Least-squares Error/Misfit
+def compute_least_squares_misfit(simulated_data, observed_data):
+
+    # Check for size compatibility
+    if observed.shape != synthetic.shape:
+        raise ValueError("Observed and synthetic data must have the same dimensions.")
+    
+    # Compute the residuals
+    residual = simulated_data - observed_data
+    
+    # Compute the least-squares misfit
+    misfit = 0.5 * np.sum(residual ** 2)
+    
+    return misfit
